@@ -47,6 +47,12 @@ Please download <a href="http://h2o-release.s3.amazonaws.com/h2o/rel-zermelo/1/i
 Open *H2O Flow* in the browser, the default url is `http://localhost:54321`
 
 1. Choose *importFiles* button in the home page, upload `GENERATED_DATASET/TRAIN/dataset_TRAIN/talbes/learningData.csv`
+![alt text](imgs/import_file.png)
 2. Parse the uploaded csv file
+![alt text](imgs/parse_file.png)
 3. Click *runAutoML*, set *training_frame* as the frame just parsed and set *response_column* as `dv`. In the `ignored_columns` block, check `d3m_index`, then click *Build Models*
-4. (Optional) Follow steps 1-2 to upload a test split and predict it with the trained model.
+![alt text](imgs/run_h2o.png)
+![alt text](imgs/configuration.png)
+4. (Optional) Follow steps 1-2 to upload a test split and predict it with the trained model. Export the prediction by clicking `export` button
+![alt text](imgs/choose_model.png)
+![alt text](imgs/predict.png)
