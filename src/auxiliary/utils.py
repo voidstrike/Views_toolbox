@@ -25,7 +25,7 @@ class ConfigurationReader(object):
         self.file_path = setting_corpus.get('file_path', './')
         self.dv_file_path = setting_corpus.get('dv_file_path', None)
         self.filter_file_path = setting_corpus.get('filter_file_path', None)
-        self.filter_mode = setting_corpus.get('filter_mdoe', 1)
+        self.filter_mode = setting_corpus.get('filter_mode', 1)
         self.engine = setting_corpus.get('engine', None)
         self.shift = setting_corpus.get('shift', 1)
 
@@ -50,6 +50,7 @@ class ConfigurationReader(object):
         pass
 
 
+# Filter Function for Hurdle Model
 def filterByGrid(in_dataframe: pd.DataFrame, grid_frame: pd.DataFrame, mode: int) -> pd.DataFrame:
     if mode == 1:
         grid_frame = grid_frame[grid_frame['conflict_count'] > 0]
@@ -59,5 +60,5 @@ def filterByGrid(in_dataframe: pd.DataFrame, grid_frame: pd.DataFrame, mode: int
         grid_frame = grid_frame[grid_frame['max_span'] > 1]
     else:
         raise RuntimeError('Unsupported filter mode!!!')
-
+    print(len(grid_frame.index))
     return pd.merge(in_dataframe, grid_frame, on=['pg_id'])

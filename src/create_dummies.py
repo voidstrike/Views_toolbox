@@ -52,7 +52,7 @@ def createDatasetDoc(data_name, split, x_features, y_features):
     tmp['columns'] = list()
     tmp['columns'].append({'colIndex': 0, 'colName': 'd3mIndex', 'colType': 'integer', 'role': ['index']})
     for idx, feature in enumerate(x_features):
-        if feature in ['month_id', 'country_id', 'pg_id', 'country_name']:
+        if feature in ['month', 'country_id', 'pg_id', 'country_name']:
             tmp['columns'].append({'colIndex': idx+1, 'colName': feature, 'colType': 'categorical', 'role': ['attribute']})
         else:
             tmp['columns'].append({'colIndex': idx+1, 'colName': feature, 'colType': 'real', 'role': ['attribute']})

@@ -6,9 +6,9 @@ import logging
 import csv
 import json
 
-from typing import List
-from create_dummies import createDummyProblemDoc, createDatasetDoc, createDataSplit
-from auxiliary.utils import ConfigurationReader
+from .create_dummies import createDummyProblemDoc, createDatasetDoc, createDataSplit
+from .auxiliary.utils import ConfigurationReader
+
 
 # Auxiliary function that builds D3M folder strucutre -- Kind of ugly
 def buildD3MRoot(tgt_path: str) -> None:
@@ -36,23 +36,20 @@ def main(conf):
     print('Start Loading Dataset-----------------------------------------------------------------')
     dataset_configuration = ConfigurationReader(conf.config)
     x_list, y_list = dataset_configuration.feature_list, dataset_configuration.label_list
-    # print(x_list)
-    # print(y_list)
-    # problem_doc = createDummyProblemDoc(dataset_configuration.data_name, [(y_list[0], len(x_list) + 1)], ['regression'], 'meanSquaredError')
 
     if dataset_configuration.file_type == 'csv':
-        from container.CSVContainer import ViewContainer
+        from .container.CSVContainer import ViewContainer
         data_container = ViewContainer(dataset_configuration.file_path, dataset_configuration)
     elif dataset_configuration.file_type == 'parquet':
-        from container.ParquetContainer import ViewContainer
+        from .container.ParquetContainer import ViewContainer
         data_container = ViewContainer(dataset_configuration.file_path, dataset_configuration.engine)
     else:
         raise RuntimeError(f'[csv|parquet] is supposed to be given, but {dataset_configuration.file_type} shows up')
 
     print('Data Loading Finished-----------------------------------------------------------------')
-    print('Start Manipulate Dataset---------------------------------------------------------------')
+    print('Start Dateset Manipulation------------------------------------------------------------')
 
-    # Manipulate the dataset
+    # Manipulate the dataset / add 'date_t' for matching.csv
     data_container.filterByColumns_(x_list + y_list)
 
     if 'train' == dataset_configuration.mode:

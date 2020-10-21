@@ -34,41 +34,49 @@ class ViewContainer(CSVContainer):
     def filterByColumns(self, feature_list: List[str]) -> pd.DataFrame:
         return self.data.filter(items=feature_list)
 
-    def filterByIndex_(self, start: int ,end: int) -> pd.DataFrame:
+    def filterByIndex_(self, start: int, end: int) -> pd.DataFrame:
         self.data = self.filterByIndex(start, end)
         return self.data
 
     def filterByIndex(self, start: int, end: int) -> pd.DataFrame:
         # Hard-code, seems OK here
-        return self.data.loc[self.df_idx[start:end]]
+        # return self.data.loc[self.df_idx[start:end]]
+        return self.data.loc[start: end]
 
     def reorder_index(self, new_order: List[str], sort=True) -> pd.DataFrame:
         tmp = self.data.reorder_levels(new_order)
         return tmp if not sort else tmp.sort_index()
 
     def _read_data(self, ) -> None:
+        # Kind of hardcoded
         tmp_data = pd.read_csv(self.root)
         if self.conf.task_type == 'pgm':
             if self.conf.dv_file_path:
                 # Concatenate auxiliary dataset -- DV_DATASET
-                print('Using auxiliary dataset, MAKE SURE corresponding feature(s) are in the feature list')
-                print('Filtering MAIN DATAFRAME using auxiliary dataset')
+                print(f'Using auxiliary dataset, MAKE SURE corresponding feature(s) are in the feature list. '
+                      f'Current target feature(s): {self.conf.label_list}')
+                print('Filtering MAIN DATAFRAME using DV dataset')
                 aux_dv_data = pd.read_csv(self.conf.dv_file_path)
                 aux_dv_data = aux_dv_data.rename(columns={f'date_{self.conf.shift}': 'month_id'})
                 tmp_data = pd.merge(tmp_data, aux_dv_data, on=['month_id', 'pg_id'])
+                tmp_data = tmp_data.drop(columns=['month_id']).rename(columns={'date_t': 'month_id'})
+            # Postpone this part to hard_manipulation ?
             if self.conf.filter_file_path:
-                print('Further filter the data with grid information')
+                print('Further filtering MAIN DATAFRAME using grid dataset')
                 aux_grid_data = pd.read_csv(self.conf.filter_file_path)
                 tmp_data = filterByGrid(tmp_data, aux_grid_data, mode=self.conf.filter_mode)
+                print(len(tmp_data.index))
             self.data = tmp_data.set_index(['month_id', 'pg_id']).sort_index()
         elif self.conf.task_type == 'cm':
             if self.conf.dv_file_path:
                 # Concatenate auxiliary dataset -- DV_DATASET
-                print('Using auxiliary dataset, MAKE SURE corresponding feature(s) are in the feature list')
-                print('Filtering MAIN DATAFRAME using auxiliary dataset')
+                print(f'Using auxiliary dataset, MAKE SURE corresponding feature(s) are in the feature list. '
+                      f'Current target feature(s): {self.conf.label_list}')
+                print('Filtering MAIN DATAFRAME using DV dataset')
                 aux_dv_data = pd.read_csv(self.conf.dv_file_path)
                 aux_dv_data = aux_dv_data.rename(columns={f'date_{self.conf.shift}': 'month_id'})
                 tmp_data = pd.merge(tmp_data, aux_dv_data, on=['month_id', 'country_id'])
+                tmp_data = tmp_data.drop(columns=['month_id']).rename(columns={'date_t': 'month_id'})
             self.data = tmp_data.set_index(['month_id', 'country_id']).sort_index()
         else:
             raise RuntimeError(f'Unsupported tasktype : {self.conf.task_type} is given')
@@ -84,21 +92,26 @@ class ViewContainer(CSVContainer):
 
     def to_d3m(self, d3m_root, train_start, train_end, test_start, test_end):
         assert self.manipulated
-        train_split = self.data.loc[self.df_idx[train_start:train_end]]
-        test_split = self.data.loc[self.df_idx[test_start:test_end]]
-
+        # train_split = self.data.loc[self.df_idx[train_start:train_end]]
+        train_split = self.data.loc[train_start:train_end]
+        train_split = train_split.dropna()
+        # test_split = self.data.loc[self.df_idx[test_start:test_end]]
+        test_split = self.data.loc[test_start:test_end]
         train_len = len(train_split.index)
 
-        tmp_df = pd.concat([train_split, test_split], axis=0).reset_index(drop=True)
+        # Noted that index is not drop for now
+        tmp_df = pd.concat([train_split, test_split], axis=0).reset_index(drop=False)
         tmp_df.index.name = 'd3mIndex'
 
-        train_split = tmp_df.loc[:train_len]
-        test_split = tmp_df.loc[train_len:]
+        # Save MATCH information for future use
+        match_df = tmp_df.filter(items=['month_id', self.secondary_key])
+        # match_df = tmp_df.filter(items=['month_id', self.secondary_key])
+        match_file_path = os.path.join(d3m_root, 'matching.csv')
+        match_df.to_csv(match_file_path)
+        tmp_df = tmp_df.drop(columns=['month_id', self.secondary_key])
+        # tmp_df = tmp_df.drop(columns=['month_id', self.secondary_key])
+        train_split, test_split = tmp_df.loc[:train_len], tmp_df[train_len:]
 
-        # Additional manipulate, reduce month_id to avoid memorization
-        # if 'month_id' in train_split.columns:
-        #     train_split['month_id'] = int(train_split['month_id'] % 12)
-        #     test_split['month_id'] = int(test_split['month_id'] % 12)
         # SAVING
         training_file_path = os.path.join(d3m_root, 'TRAIN/dataset_TRAIN/tables/learningData.csv')
         train_split.to_csv(training_file_path)
