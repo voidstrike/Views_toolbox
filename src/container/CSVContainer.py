@@ -58,6 +58,7 @@ class ViewContainer(CSVContainer):
                 print('Filtering MAIN DATAFRAME using DV dataset')
                 aux_dv_data = pd.read_csv(self.conf.dv_file_path)
                 aux_dv_data = aux_dv_data.rename(columns={f'date_{self.conf.shift}': 'month_id'})
+                # aux_dv_data['month_id'] = aux_dv_data['month_id'] - 1  # Final Submission
                 tmp_data = pd.merge(tmp_data, aux_dv_data, on=['month_id', 'pg_id'])
                 tmp_data = tmp_data.drop(columns=['month_id']).rename(columns={'date_t': 'month_id'})
             # Postpone this part to hard_manipulation ?
@@ -75,6 +76,7 @@ class ViewContainer(CSVContainer):
                 print('Filtering MAIN DATAFRAME using DV dataset')
                 aux_dv_data = pd.read_csv(self.conf.dv_file_path)
                 aux_dv_data = aux_dv_data.rename(columns={f'date_{self.conf.shift}': 'month_id'})
+                # aux_dv_data['month_id'] = aux_dv_data['month_id'] - 1  # Final Submission
                 tmp_data = pd.merge(tmp_data, aux_dv_data, on=['month_id', 'country_id'])
                 tmp_data = tmp_data.drop(columns=['month_id']).rename(columns={'date_t': 'month_id'})
             self.data = tmp_data.set_index(['month_id', 'country_id']).sort_index()
